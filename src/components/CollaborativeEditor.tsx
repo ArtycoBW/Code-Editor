@@ -17,6 +17,24 @@ export function CollaborativeEditor() {
   const room = useRoom();
   const [element, setElement] = useState<HTMLElement>();
   const [yUndoManager, setYUndoManager] = useState<Y.UndoManager>();
+  const [code, setCode] = useState<string>("");
+  const [result, setResult] = useState<string>("");
+
+  const runCode = async () => {
+    const response = await fetch("/api/compile", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ code }),
+    });
+    const data = await response.json();
+    if (data.error) {
+      setResult(`Error: ${data.error}`);
+    } else {
+      setResult(`Result: ${data.result}`);
+    }
+  };
 
   // Get user info from Liveblocks authentication endpoint
   const userInfo = useSelf((me) => me.info);
@@ -66,6 +84,10 @@ export function CollaborativeEditor() {
       parent: element,
     });
 
+    ytext.observe((event) => {
+      setCode(ytext.toString());
+    });
+
     return () => {
       ydoc?.destroy();
       provider?.destroy();
@@ -82,6 +104,9 @@ export function CollaborativeEditor() {
         <Avatars />
       </div>
       <div className={styles.editorContainer} ref={ref}></div>
+      <button onClick={runCode}>Run Code</button>
+      {/* Добавлено: отображение результата */}
+      <pre>{result}</pre>
     </div>
   );
 }
